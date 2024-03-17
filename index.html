@@ -10,11 +10,11 @@
 <center>
     <div class="menu-container">
         <ul>
-            <li><a href=""></a></li>
-            <li><a href=""><img src="file:///C:/Users/peteij/Downloads/icons8-menu-94.png" height="35px"></a></li>
-            <li><a href=""><img src="file:///C:/Users/peteij/Downloads/icons8-male-user-94.png" height="35px"></a></li>
-            <li><a href=""><img src="file:///C:/Users/peteij/Downloads/icons8-camera-94.png" height="35px"></a></li>
-            <li><a href=""><img src="file:///C:/Users/peteij/Downloads/icons8-about-94.png" height="35px"></a></li>
+            <li><a href=""><img src="icons8-email-94.png" height="35px"></a></li>
+            <li><a href=""><img src="icons8-menu-94.png" height="35px"></a></li>
+            <li><a href=""><img src="icons8-about-94.png" height="35px"></a></li>
+            <li><a href=""><img src="icons8-camera-94.png" height="35px"></a></li>
+            <li><a href=""><img src="icons8-plus-94.png" height="35px"></a></li>
         </ul>
       </div>
 <div class="container">
@@ -28,179 +28,172 @@
   <div id="image-gallery" class="image-gallery"></div>
 </div>
 </center>
-<script src="https://www.gstatic.com/firebasejs/9.0.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.0.1/firebase-storage.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.1.0/firebase-storage.js"></script>
 <script>
-  // Your Firebase project configuration
-  const firebaseConfig = {
+// Firebase configuration
+const firebaseConfig = {
     apiKey: "AIzaSyD8MILnn0mxAjIymYunOJ9PeOcS8TREN-s",
     authDomain: "mewinghub.firebaseapp.com",
     projectId: "mewinghub",
     storageBucket: "mewinghub.appspot.com",
     messagingSenderId: "1002076070934",
     appId: "1:1002076070934:web:74e962a275a0c64c514137",
-  };
+};
 
-  // Initialize Firebase
-  firebase.initializeApp(firebaseConfig);
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
 
-  // Firebase Storage reference
-  const storage = firebase.storage();
-  const storageRef = storage.ref();
+// Get a reference to the Firebase storage service
+const storage = firebase.storage();
 
-  // Function to display uploaded images in the gallery
-  function displayImages(images) {
+// Function to display uploaded images in the gallery
+function displayImages() {
     var imageGallery = document.getElementById('image-gallery');
     imageGallery.innerHTML = '';
 
-    images.forEach(function(image, index) {
-      var imageContainer = document.createElement('div');
-      imageContainer.className = 'image-container';
+    uploadedImages.forEach(function(image, index) {
+        var imageContainer = document.createElement('div');
+        imageContainer.className = 'image-container';
 
-      var img = document.createElement('img');
-      img.src = image.url;
-      img.style.maxWidth = '100%';
-      imageContainer.appendChild(img);
+        var img = document.createElement('img');
+        img.src = image.imageUrl;
+        img.style.maxWidth = '100%';
+        imageContainer.appendChild(img);
 
-      var createdBy = document.createElement('span');
-      createdBy.textContent = 'Uploaded by: ' + image.name;
-      imageContainer.appendChild(createdBy);
+        var createdBy = document.createElement('span');
+        createdBy.textContent = 'Uploaded by: ' + image.name;
+        imageContainer.appendChild(createdBy);
 
-      var deleteButton = document.createElement('button');
-      deleteButton.textContent = 'Delete';
-      deleteButton.addEventListener('click', function() {
-        deleteImage(image.name);
-      });
-      imageContainer.appendChild(deleteButton);
+        var likeButton = document.createElement('button');
+        likeButton.textContent = 'Like';
+        likeButton.addEventListener('click', function() {
+            likeImage(index);
+        });
+        imageContainer.appendChild(likeButton);
 
-      var likesCount = document.createElement('span');
-      likesCount.textContent = 'Likes: ' + image.likes;
-      imageContainer.appendChild(likesCount);
+        var deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Delete';
+        deleteButton.addEventListener('click', function() {
+            deleteImage(index);
+        });
+        imageContainer.appendChild(deleteButton);
 
-      imageGallery.appendChild(imageContainer);
+        var likesCount = document.createElement('span');
+        likesCount.textContent = 'Likes: ' + image.likes;
+        imageContainer.appendChild(likesCount);
+
+        imageGallery.appendChild(imageContainer);
     });
-  }
+}
 
-  // Function to handle taking a photo using the camera
-  document.getElementById('take-photo-button').addEventListener('click', function() {
+// Function to handle taking a photo using the camera
+document.getElementById('take-photo-button').addEventListener('click', function() {
     var constraints = { video: true };
 
     navigator.mediaDevices.getUserMedia(constraints)
-      .then(function(stream) {
-        var video = document.createElement('video');
-        video.srcObject = stream;
-        video.play();
+        .then(function(stream) {
+            var video = document.createElement('video');
+            video.srcObject = stream;
+            video.play();
 
-        var canvas = document.createElement('canvas');
-        var context = canvas.getContext('2d');
+            var canvas = document.createElement('canvas');
+            var context = canvas.getContext('2d');
 
-        video.addEventListener('canplay', function() {
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            video.addEventListener('canplay', function() {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-          var imageUrl = canvas.toDataURL('image/png');
-          saveImageToFirebase(imageUrl);
+                var imageUrl = canvas.toDataURL('image/png');
+                saveImageToFirebase(imageUrl);
+            });
+        })
+        .catch(function(err) {
+            console.error('Error accessing camera: ', err);
         });
-      })
-      .catch(function(err) {
-        console.error('Error accessing camera: ', err);
-      });
-  });
+});
 
-  // Function to save image to Firebase Storage
-  function saveImageToFirebase(imageUrl) {
+// Function to save image to Firebase Storage
+function saveImageToFirebase(imageUrl) {
     const nameInput = document.getElementById('nameInput').value;
 
     if (!nameInput) {
-      alert('Please enter your name.');
-      return;
+        alert('Please enter your name.');
+        return;
     }
 
-    // Convert base64 image to Blob
-    var byteString = atob(imageUrl.split(',')[1]);
-    var mimeString = imageUrl.split(',')[0].split(':')[1].split(';')[0];
-    var arrayBuffer = new ArrayBuffer(byteString.length);
-    var intArray = new Uint8Array(arrayBuffer);
-    for (var i = 0; i < byteString.length; i++) {
-      intArray[i] = byteString.charCodeAt(i);
-    }
-    var blob = new Blob([arrayBuffer], { type: mimeString });
+    // Generate a random image filename
+    const filename = Math.random().toString(36).substring(7) + '.png';
 
-    // Upload image to Firebase Storage
-    var imageName = Date.now() + '.png';
-    var uploadTask = storageRef.child(imageName).put(blob);
-    uploadTask.on('state_changed', 
-      function(snapshot) {
-        // Image upload progress
-      }, 
-      function(error) {
+    // Create a reference to the Firebase storage location
+    const storageRef = storage.ref().child(filename);
+
+    // Convert data URL to Blob
+    const blob = dataURLtoBlob(imageUrl);
+
+    // Upload the image file to Firebase Storage
+    storageRef.put(blob).then(function(snapshot) {
+        console.log('Image uploaded successfully:', snapshot);
+        // Get the public URL of the uploaded image
+        storageRef.getDownloadURL().then(function(downloadURL) {
+            // Save the uploaded image data to Firebase Realtime Database
+            firebase.database().ref('images').push({
+                name: nameInput,
+                imageUrl: downloadURL,
+                likes: 0
+            });
+            // Display the updated images
+            displayImages();
+        });
+    }).catch(function(error) {
         console.error('Error uploading image:', error);
         alert('Failed to upload image.');
-      }, 
-      function() {
-        // Image upload success
-        uploadTask.snapshot.ref.getDownloadURL().then(function(downloadURL) {
-          saveImageLocally(nameInput, downloadURL);
-        });
-      }
-    );
-  }
-
-  // Function to save image locally
-  function saveImageLocally(name, url) {
-    // Create object representing the uploaded image
-    var uploadedImage = {
-      name: name,
-      url: url,
-      likes: 0 // Initial likes count
-    };
-
-    // Add the uploaded image to the array
-    uploadedImages.push(uploadedImage);
-
-    // Save uploaded images to localStorage
-    localStorage.setItem('uploadedImages', JSON.stringify(uploadedImages));
-
-    // Display the updated images
-    displayImages(uploadedImages);
-  }
-
-  // Function to delete an image from Firebase Storage and locally
-  function deleteImage(name) {
-    // Find image index by name
-    var index = uploadedImages.findIndex(function(image) {
-      return image.name === name;
     });
+}
 
-    if (index !== -1) {
-      // Delete image from Firebase Storage
-      var imageName = name + '.png';
-      var imageRef = storageRef.child(imageName);
-      imageRef.delete().then(function() {
-        // Delete image locally
-        uploadedImages.splice(index, 1);
-
-        // Save uploaded images to localStorage
-        localStorage.setItem('uploadedImages', JSON.stringify(uploadedImages));
-
+// Function to delete an image
+function deleteImage(index) {
+    // Delete the image from Firebase Storage
+    const storageRef = storage.refFromURL(uploadedImages[index].imageUrl);
+    storageRef.delete().then(function() {
+        console.log('Image deleted successfully');
+        // Remove the image data from Firebase Realtime Database
+        firebase.database().ref('images').child(Object.keys(uploadedImages)[index]).remove();
         // Display the updated images
-        displayImages(uploadedImages);
-      }).catch(function(error) {
+        displayImages();
+    }).catch(function(error) {
         console.error('Error deleting image:', error);
         alert('Failed to delete image.');
-      });
+    });
+}
+
+// Function to like an image
+function likeImage(index) {
+    const imageKey = Object.keys(uploadedImages)[index];
+    firebase.database().ref('images/' + imageKey + '/likes').transaction(function(likes) {
+        return (likes || 0) + 1;
+    }).then(function() {
+        console.log('Image liked successfully');
+        // Display the updated images
+        displayImages();
+    }).catch(function(error) {
+        console.error('Error liking image:', error);
+        alert('Failed to like image.');
+    });
+}
+
+// Function to convert data URL to Blob
+function dataURLtoBlob(dataURL) {
+    var arr = dataURL.split(',');
+    var mime = arr[0].match(/:(.*?);/)[1];
+    var bstr = atob(arr[1]);
+    var n = bstr.length;
+    var u8arr = new Uint8Array(n);
+    while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
     }
-  }
-
-  // Function to initialize uploaded images from localStorage
-  function initializeUploadedImages() {
-    var images = JSON.parse(localStorage.getItem('uploadedImages')) || [];
-    displayImages(images);
-  }
-
-  // Initialize uploaded images
-  initializeUploadedImages();
-</script>
+    return new Blob([u8arr], { type: mime });
+}
 </body>
 </html>
