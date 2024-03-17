@@ -29,14 +29,12 @@
 </div>
 </center>
 <script>
-// Array to store uploaded images
-var uploadedImages = [];
-
 // Function to display uploaded images in the gallery
-function displayImages(images) {
+function displayImages() {
     var imageGallery = document.getElementById('image-gallery');
     imageGallery.innerHTML = '';
-    images.forEach(function(image, index) {
+
+    uploadedImages.forEach(function(image, index) {
         var imageContainer = document.createElement('div');
         imageContainer.className = 'image-container';
 
@@ -45,23 +43,23 @@ function displayImages(images) {
         img.style.maxWidth = '100%';
         imageContainer.appendChild(img);
 
-        var userInfo = document.createElement('p');
-        userInfo.textContent = 'Uploaded by: ' + image.name;
-        imageContainer.appendChild(userInfo);
-
-        var deleteButton = document.createElement('button');
-        deleteButton.textContent = 'Delete';
-        deleteButton.onclick = function() {
-            deleteImage(index);
-        };
-        imageContainer.appendChild(deleteButton);
+        var createdBy = document.createElement('span');
+        createdBy.textContent = 'Uploaded by: ' + image.name;
+        imageContainer.appendChild(createdBy);
 
         var likeButton = document.createElement('button');
         likeButton.textContent = 'Like';
-        likeButton.onclick = function() {
+        likeButton.addEventListener('click', function() {
             likeImage(index);
-        };
+        });
         imageContainer.appendChild(likeButton);
+
+        var deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Delete';
+        deleteButton.addEventListener('click', function() {
+            deleteImage(index);
+        });
+        imageContainer.appendChild(deleteButton);
 
         var likesCount = document.createElement('span');
         likesCount.textContent = 'Likes: ' + image.likes;
@@ -70,9 +68,6 @@ function displayImages(images) {
         imageGallery.appendChild(imageContainer);
     });
 }
-
-// Initial display of images
-displayImages(uploadedImages);
 
 // Function to handle taking a photo using the camera
 document.getElementById('take-photo-button').addEventListener('click', function() {
@@ -101,7 +96,7 @@ document.getElementById('take-photo-button').addEventListener('click', function(
         });
 });
 
-// Function to save image locally on the webpage
+// Function to save image locally on the webpage and in localStorage
 function saveImageLocally(imageUrl) {
     const nameInput = document.getElementById('nameInput').value;
 
@@ -120,21 +115,39 @@ function saveImageLocally(imageUrl) {
     // Add the uploaded image to the array
     uploadedImages.push(uploadedImage);
 
+    // Save uploaded images to localStorage
+    localStorage.setItem('uploadedImages', JSON.stringify(uploadedImages));
+
     // Display the updated images
-    displayImages(uploadedImages);
+    displayImages();
 }
 
 // Function to delete an image
 function deleteImage(index) {
-    uploadedImages.splice(index, 1); // Remove the image from the array
-    displayImages(uploadedImages); // Update the displayed images
+    uploadedImages.splice(index, 1);
+
+    // Save uploaded images to localStorage
+    localStorage.setItem('uploadedImages', JSON.stringify(uploadedImages));
+
+    displayImages();
 }
 
 // Function to like an image
 function likeImage(index) {
-    uploadedImages[index].likes++; // Increment the likes count for the image
-    displayImages(uploadedImages); // Update the displayed images
+    uploadedImages[index].likes++;
+
+    // Save uploaded images to localStorage
+    localStorage.setItem('uploadedImages', JSON.stringify(uploadedImages));
+
+    displayImages();
 }
+
+// Initialize uploadedImages array with images from localStorage if available
+var uploadedImages = JSON.parse(localStorage.getItem('uploadedImages')) || [];
+
+// Display initial images
+displayImages();
+
 </script>
 </body>
 </html>
