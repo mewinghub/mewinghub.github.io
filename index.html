@@ -10,11 +10,11 @@
 <center>
     <div class="menu-container">
         <ul>
-            <li><a href=""><img src="icons8-email-94.png" height="35px"></a></li>
-            <li><a href=""><img src="icons8-menu-94.png" height="35px"></a></li>
-            <li><a href=""><img src="icons8-about-94.png" height="35px"></a></li>
-            <li><a href=""><img src="icons8-camera-94.png" height="35px"></a></li>
-            <li><a href=""><img src="icons8-plus-94.png" height="35px"></a></li>
+            <li><a href=""></a></li>
+            <li><a href=""><img src="file:///C:/Users/peteij/Downloads/icons8-menu-94.png" height="35px"></a></li>
+            <li><a href=""><img src="file:///C:/Users/peteij/Downloads/icons8-male-user-94.png" height="35px"></a></li>
+            <li><a href=""><img src="file:///C:/Users/peteij/Downloads/icons8-camera-94.png" height="35px"></a></li>
+            <li><a href=""><img src="file:///C:/Users/peteij/Downloads/icons8-about-94.png" height="35px"></a></li>
         </ul>
       </div>
 <div class="container">
@@ -28,88 +28,132 @@
   <div id="image-gallery" class="image-gallery"></div>
 </div>
 </center>
+<script src="https://www.gstatic.com/firebasejs/9.0.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.0.1/firebase-storage.js"></script>
 <script>
-// Function to display uploaded images in the gallery
-function displayImages() {
+  // Your Firebase project configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyD8MILnn0mxAjIymYunOJ9PeOcS8TREN-s",
+    authDomain: "mewinghub.firebaseapp.com",
+    projectId: "mewinghub",
+    storageBucket: "mewinghub.appspot.com",
+    messagingSenderId: "1002076070934",
+    appId: "1:1002076070934:web:74e962a275a0c64c514137",
+  };
+
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+
+  // Firebase Storage reference
+  const storage = firebase.storage();
+  const storageRef = storage.ref();
+
+  // Function to display uploaded images in the gallery
+  function displayImages(images) {
     var imageGallery = document.getElementById('image-gallery');
     imageGallery.innerHTML = '';
 
-    uploadedImages.forEach(function(image, index) {
-        var imageContainer = document.createElement('div');
-        imageContainer.className = 'image-container';
+    images.forEach(function(image, index) {
+      var imageContainer = document.createElement('div');
+      imageContainer.className = 'image-container';
 
-        var img = document.createElement('img');
-        img.src = image.imageUrl;
-        img.style.maxWidth = '100%';
-        imageContainer.appendChild(img);
+      var img = document.createElement('img');
+      img.src = image.url;
+      img.style.maxWidth = '100%';
+      imageContainer.appendChild(img);
 
-        var createdBy = document.createElement('span');
-        createdBy.textContent = 'Uploaded by: ' + image.name;
-        imageContainer.appendChild(createdBy);
+      var createdBy = document.createElement('span');
+      createdBy.textContent = 'Uploaded by: ' + image.name;
+      imageContainer.appendChild(createdBy);
 
-        var likeButton = document.createElement('button');
-        likeButton.textContent = 'Like';
-        likeButton.addEventListener('click', function() {
-            likeImage(index);
-        });
-        imageContainer.appendChild(likeButton);
+      var deleteButton = document.createElement('button');
+      deleteButton.textContent = 'Delete';
+      deleteButton.addEventListener('click', function() {
+        deleteImage(image.name);
+      });
+      imageContainer.appendChild(deleteButton);
 
-        var deleteButton = document.createElement('button');
-        deleteButton.textContent = 'Delete';
-        deleteButton.addEventListener('click', function() {
-            deleteImage(index);
-        });
-        imageContainer.appendChild(deleteButton);
+      var likesCount = document.createElement('span');
+      likesCount.textContent = 'Likes: ' + image.likes;
+      imageContainer.appendChild(likesCount);
 
-        var likesCount = document.createElement('span');
-        likesCount.textContent = 'Likes: ' + image.likes;
-        imageContainer.appendChild(likesCount);
-
-        imageGallery.appendChild(imageContainer);
+      imageGallery.appendChild(imageContainer);
     });
-}
+  }
 
-// Function to handle taking a photo using the camera
-document.getElementById('take-photo-button').addEventListener('click', function() {
+  // Function to handle taking a photo using the camera
+  document.getElementById('take-photo-button').addEventListener('click', function() {
     var constraints = { video: true };
 
     navigator.mediaDevices.getUserMedia(constraints)
-        .then(function(stream) {
-            var video = document.createElement('video');
-            video.srcObject = stream;
-            video.play();
+      .then(function(stream) {
+        var video = document.createElement('video');
+        video.srcObject = stream;
+        video.play();
 
-            var canvas = document.createElement('canvas');
-            var context = canvas.getContext('2d');
+        var canvas = document.createElement('canvas');
+        var context = canvas.getContext('2d');
 
-            video.addEventListener('canplay', function() {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        video.addEventListener('canplay', function() {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-                var imageUrl = canvas.toDataURL('image/png');
-                saveImageLocally(imageUrl);
-            });
-        })
-        .catch(function(err) {
-            console.error('Error accessing camera: ', err);
+          var imageUrl = canvas.toDataURL('image/png');
+          saveImageToFirebase(imageUrl);
         });
-});
+      })
+      .catch(function(err) {
+        console.error('Error accessing camera: ', err);
+      });
+  });
 
-// Function to save image locally on the webpage and in localStorage
-function saveImageLocally(imageUrl) {
+  // Function to save image to Firebase Storage
+  function saveImageToFirebase(imageUrl) {
     const nameInput = document.getElementById('nameInput').value;
 
     if (!nameInput) {
-        alert('Please enter your name.');
-        return;
+      alert('Please enter your name.');
+      return;
     }
 
+    // Convert base64 image to Blob
+    var byteString = atob(imageUrl.split(',')[1]);
+    var mimeString = imageUrl.split(',')[0].split(':')[1].split(';')[0];
+    var arrayBuffer = new ArrayBuffer(byteString.length);
+    var intArray = new Uint8Array(arrayBuffer);
+    for (var i = 0; i < byteString.length; i++) {
+      intArray[i] = byteString.charCodeAt(i);
+    }
+    var blob = new Blob([arrayBuffer], { type: mimeString });
+
+    // Upload image to Firebase Storage
+    var imageName = Date.now() + '.png';
+    var uploadTask = storageRef.child(imageName).put(blob);
+    uploadTask.on('state_changed', 
+      function(snapshot) {
+        // Image upload progress
+      }, 
+      function(error) {
+        console.error('Error uploading image:', error);
+        alert('Failed to upload image.');
+      }, 
+      function() {
+        // Image upload success
+        uploadTask.snapshot.ref.getDownloadURL().then(function(downloadURL) {
+          saveImageLocally(nameInput, downloadURL);
+        });
+      }
+    );
+  }
+
+  // Function to save image locally
+  function saveImageLocally(name, url) {
     // Create object representing the uploaded image
     var uploadedImage = {
-        name: nameInput,
-        imageUrl: imageUrl,
-        likes: 0 // Initial likes count
+      name: name,
+      url: url,
+      likes: 0 // Initial likes count
     };
 
     // Add the uploaded image to the array
@@ -119,35 +163,44 @@ function saveImageLocally(imageUrl) {
     localStorage.setItem('uploadedImages', JSON.stringify(uploadedImages));
 
     // Display the updated images
-    displayImages();
-}
+    displayImages(uploadedImages);
+  }
 
-// Function to delete an image
-function deleteImage(index) {
-    uploadedImages.splice(index, 1);
+  // Function to delete an image from Firebase Storage and locally
+  function deleteImage(name) {
+    // Find image index by name
+    var index = uploadedImages.findIndex(function(image) {
+      return image.name === name;
+    });
 
-    // Save uploaded images to localStorage
-    localStorage.setItem('uploadedImages', JSON.stringify(uploadedImages));
+    if (index !== -1) {
+      // Delete image from Firebase Storage
+      var imageName = name + '.png';
+      var imageRef = storageRef.child(imageName);
+      imageRef.delete().then(function() {
+        // Delete image locally
+        uploadedImages.splice(index, 1);
 
-    displayImages();
-}
+        // Save uploaded images to localStorage
+        localStorage.setItem('uploadedImages', JSON.stringify(uploadedImages));
 
-// Function to like an image
-function likeImage(index) {
-    uploadedImages[index].likes++;
+        // Display the updated images
+        displayImages(uploadedImages);
+      }).catch(function(error) {
+        console.error('Error deleting image:', error);
+        alert('Failed to delete image.');
+      });
+    }
+  }
 
-    // Save uploaded images to localStorage
-    localStorage.setItem('uploadedImages', JSON.stringify(uploadedImages));
+  // Function to initialize uploaded images from localStorage
+  function initializeUploadedImages() {
+    var images = JSON.parse(localStorage.getItem('uploadedImages')) || [];
+    displayImages(images);
+  }
 
-    displayImages();
-}
-
-// Initialize uploadedImages array with images from localStorage if available
-var uploadedImages = JSON.parse(localStorage.getItem('uploadedImages')) || [];
-
-// Display initial images
-displayImages();
-
+  // Initialize uploaded images
+  initializeUploadedImages();
 </script>
 </body>
 </html>
