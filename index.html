@@ -10,30 +10,30 @@
 <center>
     <div class="menu-container">
         <ul>
-          <li><a href=""><img src="file:///C:/Users/peteij/Downloads/icons8-menu-94.png" height="35px"></a></li>
-          <li><a href="https://outlook.office365.com/mail/"><img src="file:///C:/Users/peteij/Downloads/icons8-email-94.png" height="30px"></a></li>
-          <li><a href=""><img src="file:///C:/Users/peteij/Downloads/icons8-male-user-94.png" height="35px"></a></li>
-          <li><a href=""><img src="file:///C:/Users/peteij/Downloads/icons8-camera-94.png" height="35px"></a></li>
-          <li><a href=""><img src="file:///C:/Users/peteij/Downloads/icons8-about-94.png" height="35px"></a></li>
+            <li><a href=""></a></li>
+            <li><a href=""><img src="file:///C:/Users/peteij/Downloads/icons8-menu-94.png" height="35px"></a></li>
+            <li><a href=""><img src="file:///C:/Users/peteij/Downloads/icons8-male-user-94.png" height="35px"></a></li>
+            <li><a href=""><img src="file:///C:/Users/peteij/Downloads/icons8-camera-94.png" height="35px"></a></li>
+            <li><a href=""><img src="file:///C:/Users/peteij/Downloads/icons8-about-94.png" height="35px"></a></li>
         </ul>
       </div>
 <div class="container">
   <form id="image-upload-form">
+    <input type="file" id="imageInput" accept="image/*" onchange="previewImage(event)" style="margin: 8px;">
     <input type="text" id="nameInput" placeholder="Your Name" style="margin: 8px;">
     <hr style="width: 35em; margin: 0.75em;">
-    <button type="button" id="take-photo-button">Take Photo</button>
+    <button type="button" onclick="uploadImage()">Upload Image</button>
   </form>
+  <div id="imagePreview"></div>
 </div>
 <div class="backdrop">
   <div id="image-gallery" class="image-gallery"></div>
 </div>
 </center>
 <script>
-// Function to display uploaded images in the gallery
-function displayImages() {
+function displayImages(images) {
     var imageGallery = document.getElementById('image-gallery');
     imageGallery.innerHTML = '';
-    var images = JSON.parse(localStorage.getItem('images')) || [];
     images.forEach(function(image, index) {
         var imageContainer = document.createElement('div');
         imageContainer.className = 'image-container';
@@ -43,28 +43,6 @@ function displayImages() {
         img.style.maxWidth = '100%';
         imageContainer.appendChild(img);
 
-        var namePara = document.createElement('p');
-        namePara.textContent = 'Name: ' + image.name;
-        imageContainer.appendChild(namePara);
-
-        var likeButton = document.createElement('button');
-        likeButton.textContent = 'Like';
-        likeButton.className = 'like-button';
-        likeButton.dataset.index = index;
-        likeButton.addEventListener('click', function() {
-            likeImage(index);
-        });
-        imageContainer.appendChild(likeButton);
-
-        var deleteButton = document.createElement('button');
-        deleteButton.textContent = 'Delete';
-        deleteButton.className = 'delete-button';
-        deleteButton.dataset.index = index;
-        deleteButton.addEventListener('click', function() {
-            deleteImage(index);
-        });
-        imageContainer.appendChild(deleteButton);
-
         var likesCount = document.createElement('span');
         likesCount.textContent = 'Likes: ' + image.likes;
         imageContainer.appendChild(likesCount);
@@ -73,65 +51,67 @@ function displayImages() {
     });
 }
 
-// Function to save image to localStorage
-function saveImageToLocalStorage(imageUrl, name) {
-    var images = JSON.parse(localStorage.getItem('images')) || [];
-    images.push({ imageUrl: imageUrl, name: name, likes: 0 });
-    localStorage.setItem('images', JSON.stringify(images));
-}
-
-// Function to delete an image
-function deleteImage(index) {
-    var images = JSON.parse(localStorage.getItem('images')) || [];
-    images.splice(index, 1);
-    localStorage.setItem('images', JSON.stringify(images));
-    displayImages();
-}
-
-// Function to like an image
-function likeImage(index) {
-    var images = JSON.parse(localStorage.getItem('images')) || [];
-    images[index].likes++;
-    localStorage.setItem('images', JSON.stringify(images));
-    displayImages();
+// Fetch images from server
+function fetchImages() {
+    fetch('/images')
+        .then(response => response.json())
+        .then(images => {
+            displayImages(images);
+        })
+        .catch(error => console.error('Error fetching images:', error));
 }
 
 // Initial display of images
-displayImages();
+fetchImages();
 
-// Function to handle taking a photo using the camera
-document.getElementById('take-photo-button').addEventListener('click', function() {
-    var constraints = { video: true };
+function previewImage(event) {
+    const imagePreview = document.getElementById('imagePreview');
+    imagePreview.innerHTML = '';
+    const file = event.target.files[0];
+    const reader = new FileReader();
 
-    navigator.mediaDevices.getUserMedia(constraints)
-        .then(function(stream) {
-            var video = document.createElement('video');
-            video.srcObject = stream;
-            video.play();
+    reader.onload = function() {
+        const img = document.createElement('img');
+        img.src = reader.result;
+        imagePreview.appendChild(img);
+    }
 
-            var canvas = document.createElement('canvas');
-            var context = canvas.getContext('2d');
+    reader.readAsDataURL(file);
+}
 
-            video.addEventListener('canplay', function() {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+function uploadImage() {
+    const nameInput = document.getElementById('nameInput').value;
+    const imageFile = document.getElementById('imageInput').files[0];
 
-                var nameInput = document.getElementById('nameInput').value;
-                var imageUrl = canvas.toDataURL('image/png');
-                saveImageToLocalStorage(imageUrl, nameInput);
-                displayImages();
+    if (!nameInput || !imageFile) {
+        alert('Please enter your name and choose an image.');
+        return;
+    }
 
-                stream.getTracks().forEach(function(track) {
-                    track.stop();
-                });
-            });
-        })
-        .catch(function(err) {
-            console.error('Error accessing camera: ', err);
-        });
-});
+    const formData = new FormData();
+    formData.append('name', nameInput);
+    formData.append('image', imageFile);
 
+    fetch('/upload', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (response.ok) {
+            alert('Image uploaded successfully.');
+            document.getElementById('nameInput').value = '';
+            document.getElementById('imageInput').value = '';
+            document.getElementById('imagePreview').innerHTML = '';
+            fetchImages(); // Refresh images after upload
+        } else {
+            alert('Failed to upload image.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again later.');
+    });
+}
 </script>
 </body>
 </html>
