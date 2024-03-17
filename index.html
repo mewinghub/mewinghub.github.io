@@ -10,11 +10,11 @@
 <center>
     <div class="menu-container">
         <ul>
-            <li><a href=""></a></li>
-            <li><a href=""><img src="file:///C:/Users/peteij/Downloads/icons8-menu-94.png" height="35px"></a></li>
-            <li><a href=""><img src="file:///C:/Users/peteij/Downloads/icons8-male-user-94.png" height="35px"></a></li>
-            <li><a href=""><img src="file:///C:/Users/peteij/Downloads/icons8-camera-94.png" height="35px"></a></li>
-            <li><a href=""><img src="file:///C:/Users/peteij/Downloads/icons8-about-94.png" height="35px"></a></li>
+            <li><a href=""><img src="icons8-email-94.png" height="35px"></a></li>
+            <li><a href=""><img src="icons8-menu-94.png" height="35px"></a></li>
+            <li><a href=""><img src="icons8-about-94.png" height="35px"></a></li>
+            <li><a href=""><img src="icons8-camera-94.png" height="35px"></a></li>
+            <li><a href=""><img src="icons8-plus-94.png" height="35px"></a></li>
         </ul>
       </div>
 <div class="container">
@@ -29,6 +29,9 @@
 </div>
 </center>
 <script>
+// Array to store uploaded images
+var uploadedImages = [];
+
 // Function to display uploaded images in the gallery
 function displayImages(images) {
     var imageGallery = document.getElementById('image-gallery');
@@ -42,6 +45,24 @@ function displayImages(images) {
         img.style.maxWidth = '100%';
         imageContainer.appendChild(img);
 
+        var userInfo = document.createElement('p');
+        userInfo.textContent = 'Uploaded by: ' + image.name;
+        imageContainer.appendChild(userInfo);
+
+        var deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Delete';
+        deleteButton.onclick = function() {
+            deleteImage(index);
+        };
+        imageContainer.appendChild(deleteButton);
+
+        var likeButton = document.createElement('button');
+        likeButton.textContent = 'Like';
+        likeButton.onclick = function() {
+            likeImage(index);
+        };
+        imageContainer.appendChild(likeButton);
+
         var likesCount = document.createElement('span');
         likesCount.textContent = 'Likes: ' + image.likes;
         imageContainer.appendChild(likesCount);
@@ -50,18 +71,8 @@ function displayImages(images) {
     });
 }
 
-// Fetch images from server
-function fetchImages() {
-    fetch('/images')
-        .then(response => response.json())
-        .then(images => {
-            displayImages(images);
-        })
-        .catch(error => console.error('Error fetching images:', error));
-}
-
 // Initial display of images
-fetchImages();
+displayImages(uploadedImages);
 
 // Function to handle taking a photo using the camera
 document.getElementById('take-photo-button').addEventListener('click', function() {
@@ -82,7 +93,7 @@ document.getElementById('take-photo-button').addEventListener('click', function(
                 context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
                 var imageUrl = canvas.toDataURL('image/png');
-                saveImageToServer(imageUrl);
+                saveImageLocally(imageUrl);
             });
         })
         .catch(function(err) {
@@ -90,8 +101,8 @@ document.getElementById('take-photo-button').addEventListener('click', function(
         });
 });
 
-// Function to save image to the server
-function saveImageToServer(imageUrl) {
+// Function to save image locally on the webpage
+function saveImageLocally(imageUrl) {
     const nameInput = document.getElementById('nameInput').value;
 
     if (!nameInput) {
@@ -99,26 +110,30 @@ function saveImageToServer(imageUrl) {
         return;
     }
 
-    const formData = new FormData();
-    formData.append('name', nameInput);
-    formData.append('image', imageUrl);
+    // Create object representing the uploaded image
+    var uploadedImage = {
+        name: nameInput,
+        imageUrl: imageUrl,
+        likes: 0 // Initial likes count
+    };
 
-    fetch('/upload', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => {
-        if (response.ok) {
-            alert('Image uploaded successfully.');
-            fetchImages(); // Refresh images after upload
-        } else {
-            alert('Failed to upload image.');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred. Please try again later.');
-    });
+    // Add the uploaded image to the array
+    uploadedImages.push(uploadedImage);
+
+    // Display the updated images
+    displayImages(uploadedImages);
+}
+
+// Function to delete an image
+function deleteImage(index) {
+    uploadedImages.splice(index, 1); // Remove the image from the array
+    displayImages(uploadedImages); // Update the displayed images
+}
+
+// Function to like an image
+function likeImage(index) {
+    uploadedImages[index].likes++; // Increment the likes count for the image
+    displayImages(uploadedImages); // Update the displayed images
 }
 </script>
 </body>
