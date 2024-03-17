@@ -1,23 +1,9 @@
-// Function to initialize Firebase asynchronously
-function initializeFirebase() {
-    const firebaseConfig = {
-        apiKey: "AIzaSyD8MILnn0mxAjIymYunOJ9PeOcS8TREN-s",
-        authDomain: "mewinghub.firebaseapp.com",
-        projectId: "mewinghub",
-        storageBucket: "mewinghub.appspot.com",
-        messagingSenderId: "1002076070934",
-        appId: "1:1002076070934:web:74e962a275a0c64c514137",
-    };
-
-    return firebase.initializeApp(firebaseConfig);
-}
-
-// Function to display uploaded images in the gallery
-function displayImages() {
+  // Function to display uploaded images in the gallery
+ function displayImages() {
     var imageGallery = document.getElementById('image-gallery');
     imageGallery.innerHTML = '';
-
-    uploadedImages.forEach(function (image, index) {
+    var images = JSON.parse(localStorage.getItem('images')) || [];
+    images.forEach(function(image, index) {
         var imageContainer = document.createElement('div');
         imageContainer.className = 'image-container';
 
@@ -26,20 +12,20 @@ function displayImages() {
         img.style.maxWidth = '100%';
         imageContainer.appendChild(img);
 
-        var createdBy = document.createElement('span');
-        createdBy.textContent = 'Uploaded by: ' + image.name;
-        imageContainer.appendChild(createdBy);
-
         var likeButton = document.createElement('button');
         likeButton.textContent = 'Like';
-        likeButton.addEventListener('click', function () {
+        likeButton.className = 'like-button';
+        likeButton.dataset.index = index;
+        likeButton.addEventListener('click', function() {
             likeImage(index);
         });
         imageContainer.appendChild(likeButton);
 
         var deleteButton = document.createElement('button');
         deleteButton.textContent = 'Delete';
-        deleteButton.addEventListener('click', function () {
+        deleteButton.className = 'delete-button';
+        deleteButton.dataset.index = index;
+        deleteButton.addEventListener('click', function() {
             deleteImage(index);
         });
         imageContainer.appendChild(deleteButton);
@@ -52,12 +38,55 @@ function displayImages() {
     });
 }
 
+// Function to handle image upload
+document.getElementById('image-upload-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var imageInput = document.getElementById('imageInput');
+    var file = imageInput.files[0];
+    if (file) {
+        var reader = new FileReader();
+        reader.onload = function(event) {
+            var imageUrl = event.target.result;
+            saveImageToLocalStorage(imageUrl);
+            displayImages();
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+// Function to save image to localStorage
+function saveImageToLocalStorage(imageUrl) {
+    var images = JSON.parse(localStorage.getItem('images')) || [];
+    images.push({ imageUrl: imageUrl, likes: 0 });
+    localStorage.setItem('images', JSON.stringify(images));
+    alert('Image uploaded successfully!');
+}
+
+// Function to delete an image
+function deleteImage(index) {
+    var images = JSON.parse(localStorage.getItem('images')) || [];
+    images.splice(index, 1);
+    localStorage.setItem('images', JSON.stringify(images));
+    displayImages();
+}
+
+// Function to like an image
+function likeImage(index) {
+    var images = JSON.parse(localStorage.getItem('images')) || [];
+    images[index].likes++;
+    localStorage.setItem('images', JSON.stringify(images));
+    displayImages();
+}
+
+// Initial display of images
+displayImages();
+
 // Function to handle taking a photo using the camera
-document.getElementById('take-photo-button').addEventListener('click', function () {
+document.getElementById('take-photo-button').addEventListener('click', function() {
     var constraints = { video: true };
 
     navigator.mediaDevices.getUserMedia(constraints)
-        .then(function (stream) {
+        .then(function(stream) {
             var video = document.createElement('video');
             video.srcObject = stream;
             video.play();
@@ -65,154 +94,69 @@ document.getElementById('take-photo-button').addEventListener('click', function 
             var canvas = document.createElement('canvas');
             var context = canvas.getContext('2d');
 
-            video.addEventListener('canplay', function () {
+            video.addEventListener('canplay', function() {
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
                 context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
                 var imageUrl = canvas.toDataURL('image/png');
-                saveImageLocally(imageUrl);
+                saveImageToLocalStorage(imageUrl);
+                displayImages();
+
+                stream.getTracks().forEach(function(track) {
+                    track.stop();
+                });
             });
         })
-        .catch(function (err) {
+        .catch(function(err) {
             console.error('Error accessing camera: ', err);
         });
 });
 
-// Function to save image locally on the webpage and in localStorage
-function saveImageLocally(imageUrl) {
+function previewImage(event) {
+    const imagePreview = document.getElementById('imagePreview');
+    imagePreview.innerHTML = '';
+    const file = event.target.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function() {
+        const img = document.createElement('img');
+        img.src = reader.result;
+        imagePreview.appendChild(img);
+    }
+
+    reader.readAsDataURL(file);
+}
+
+function uploadImage() {
     const nameInput = document.getElementById('nameInput').value;
+    const imageFile = document.getElementById('imageInput').files[0];
 
-    if (!nameInput) {
-        alert('Please enter your name.');
+    if (!nameInput || !imageFile) {
+        alert('Please enter your name and choose an image.');
         return;
     }
 
-    // Create object representing the uploaded image
-    var uploadedImage = {
-        name: nameInput,
-        imageUrl: imageUrl,
-        likes: 0 // Initial likes count
-    };
+    const formData = new FormData();
+    formData.append('name', nameInput);
+    formData.append('image', imageFile);
 
-    // Add the uploaded image to the array
-    uploadedImages.push(uploadedImage);
-
-    // Save uploaded images to localStorage
-    localStorage.setItem('uploadedImages', JSON.stringify(uploadedImages));
-
-    // Display the updated images
-    displayImages();
+    fetch('/upload', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (response.ok) {
+            alert('Image uploaded successfully.');
+            document.getElementById('nameInput').value = '';
+            document.getElementById('imageInput').value = '';
+            document.getElementById('imagePreview').innerHTML = '';
+        } else {
+            alert('Failed to upload image.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again later.');
+    });
 }
-
-// Function to delete an image
-function deleteImage(index) {
-    uploadedImages.splice(index, 1);
-
-    // Save uploaded images to localStorage
-    localStorage.setItem('uploadedImages', JSON.stringify(uploadedImages));
-
-    displayImages();
-}
-
-// Function to like an image
-function likeImage(index) {
-    uploadedImages[index].likes++;
-
-    // Save uploaded images to localStorage
-    localStorage.setItem('uploadedImages', JSON.stringify(uploadedImages));
-
-    displayImages();
-}
-
-// Initialize uploadedImages array with images from localStorage if available
-var uploadedImages = JSON.parse(localStorage.getItem('uploadedImages')) || [];
-
-// Initialize Firebase asynchronously
-initializeFirebase().then(() => {
-    console.log("Firebase initialized successfully!");
-    // Start displaying images after Firebase initialization
-    displayImages();
-}).catch((error) => {
-    console.error("Error initializing Firebase: ", error);
-});
-
-// Check for errors in Firebase initialization
-firebase.auth().onAuthStateChanged((user) => {
-    if (user) {
-        console.log("User is signed in.");
-    } else {
-        console.log("No user is signed in.");
-    }
-});
-
-// Function to save image to Firebase Storage and Firestore
-function saveImageToFirebase(imageUrl) {
-    // Get current user
-    const user = firebase.auth().currentUser;
-
-    if (!user) {
-        console.error("No user signed in.");
-        return;
-    }
-
-    const userId = user.uid;
-    const userName = user.displayName;
-
-    var storageRef = firebase.storage().ref();
-    var imageName = userName + '_' + Date.now() + '.png';
-    var imageRef = storageRef.child('images/' + imageName);
-
-    fetch(imageUrl)
-        .then(response => response.blob())
-        .then(blob => {
-            return imageRef.put(blob);
-        })
-        .then(snapshot => {
-            return snapshot.ref.getDownloadURL();
-        })
-        .then(downloadURL => {
-            // Save the download URL along with user's information to Firestore
-            return db.collection("uploadedImages").add({
-                userId: userId,
-                userName: userName,
-                imageUrl: downloadURL,
-                likes: 0 // Initial likes count
-            });
-        })
-        .then(() => {
-            console.log("Image saved to Firebase and Firestore successfully!");
-            displayImages(); // Update the UI after saving the image
-        })
-        .catch(error => {
-            console.error("Error saving image to Firebase and Firestore: ", error);
-        });
-}
-
-// Function to display images from Firestore
-function displayImages() {
-    // Display logic remains the same
-}
-
-// Update the saveImageLocally function to use saveImageToFirebase
-function saveImageLocally(imageUrl) {
-    saveImageToFirebase(imageUrl);
-}
-
-// Initialize Firebase asynchronously
-initializeFirebase().then(() => {
-    console.log("Firebase initialized successfully!");
-    // Start displaying images after Firebase initialization
-    displayImages();
-}).catch((error) => {
-    console.error("Error initializing Firebase: ", error);
-});
-
-// Check for errors in Firebase initialization
-firebase.auth().onAuthStateChanged((user) => {
-    if (user) {
-        console.log("User is signed in.");
-    } else {
-        console.log("No user is signed in.");
-    }
-});
