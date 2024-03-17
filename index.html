@@ -16,17 +16,17 @@
             <li><a href=""><img src="icons8-camera-94.png" height="35px"></a></li>
             <li><a href=""><img src="icons8-plus-94.png" height="35px"></a></li>
         </ul>
-      </div>
-<div class="container">
-  <form id="image-upload-form">
-    <input type="text" id="nameInput" placeholder="Your Name" style="margin: 8px;">
-    <hr style="width: 35em; margin: 0.75em;">
-    <button type="button" id="take-photo-button">Take Photo</button>
-  </form>
-</div>
-<div class="backdrop">
-  <div id="image-gallery" class="image-gallery"></div>
-</div>
+    </div>
+    <div class="container">
+        <form id="image-upload-form">
+            <input type="text" id="nameInput" placeholder="Your Name" style="margin: 8px;">
+            <hr style="width: 35em; margin: 0.75em;">
+            <button type="button" id="take-photo-button">Take Photo</button>
+        </form>
+    </div>
+    <div class="backdrop">
+        <div id="image-gallery" class="image-gallery"></div>
+    </div>
 </center>
 <!-- Include Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.6.4/firebase-app.js"></script>
@@ -35,158 +35,158 @@
 <script src="https://www.gstatic.com/firebasejs/9.6.4/firebase-database.js"></script>
 
 <script>
-  // Initialize Firebase with your project configuration
-  const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
-  };
-
-  // Initialize Firebase
-  firebase.initializeApp(firebaseConfig);
-
-  // Get a reference to Firebase Storage
-  const storage = firebase.storage();
-
-  // Get a reference to Firebase Realtime Database
-  const database = firebase.database();
-
-  // Function to display uploaded images in the gallery
-  function displayImages() {
-    var imageGallery = document.getElementById('image-gallery');
-    imageGallery.innerHTML = '';
-
-    // Fetch image data from Firebase Realtime Database or Firestore
-    database.ref('images').once('value', function(snapshot) {
-      snapshot.forEach(function(childSnapshot) {
-        var imageData = childSnapshot.val();
-
-        var imageContainer = document.createElement('div');
-        imageContainer.className = 'image-container';
-
-        var img = document.createElement('img');
-        img.src = imageData.imageUrl;
-        img.style.maxWidth = '100%';
-        imageContainer.appendChild(img);
-
-        var createdBy = document.createElement('span');
-        createdBy.textContent = 'Uploaded by: ' + imageData.name;
-        imageContainer.appendChild(createdBy);
-
-        var likeButton = document.createElement('button');
-        likeButton.textContent = 'Like';
-        likeButton.addEventListener('click', function() {
-          likeImage(childSnapshot.key);
-        });
-        imageContainer.appendChild(likeButton);
-
-        var deleteButton = document.createElement('button');
-        deleteButton.textContent = 'Delete';
-        deleteButton.addEventListener('click', function() {
-          deleteImage(childSnapshot.key);
-        });
-        imageContainer.appendChild(deleteButton);
-
-        var likesCount = document.createElement('span');
-        likesCount.textContent = 'Likes: ' + imageData.likes;
-        imageContainer.appendChild(likesCount);
-
-        imageGallery.appendChild(imageContainer);
-      });
-    });
-  }
-
-  // Function to handle taking a photo using the camera
-  document.getElementById('take-photo-button').addEventListener('click', function() {
-    var constraints = { video: true };
-
-    navigator.mediaDevices.getUserMedia(constraints)
-      .then(function(stream) {
-        var video = document.createElement('video');
-        video.srcObject = stream;
-        video.play();
-
-        var canvas = document.createElement('canvas');
-        var context = canvas.getContext('2d');
-
-        video.addEventListener('canplay', function() {
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-          // Convert canvas image to Blob
-          canvas.toBlob(function(blob) {
-            // Upload image to Firebase Storage
-            var uploadTask = storage.ref().child('images/' + Date.now() + '.png').put(blob);
-
-            uploadTask.on('state_changed',
-              null,
-              function(error) {
-                console.error('Error uploading image:', error);
-              },
-              function() {
-                // Get download URL and save image data to Firebase Realtime Database
-                uploadTask.snapshot.ref.getDownloadURL().then(function(downloadURL) {
-                  saveImageToDatabase(downloadURL);
-                });
-              }
-            );
-          }, 'image/png');
-        });
-      })
-      .catch(function(err) {
-        console.error('Error accessing camera: ', err);
-      });
-  });
-
-  // Function to save image data to Firebase Realtime Database
-  function saveImageToDatabase(imageUrl) {
-    const nameInput = document.getElementById('nameInput').value;
-
-    if (!nameInput) {
-      alert('Please enter your name.');
-      return;
-    }
-
-    // Create object representing the uploaded image
-    var imageData = {
-      name: nameInput,
-      imageUrl: imageUrl,
-      likes: 0 // Initial likes count
+    // Initialize Firebase with your project configuration
+    const firebaseConfig = {
+          apiKey: "AIzaSyD8MILnn0mxAjIymYunOJ9PeOcS8TREN-s",
+          authDomain: "mewinghub.firebaseapp.com",
+          projectId: "mewinghub",
+          storageBucket: "mewinghub.appspot.com",
+          messagingSenderId: "1002076070934",
+  appId: "1:1002076070934:web:74e962a275a0c64c514137",
     };
 
-    // Save image data to Firebase Realtime Database
-    database.ref('images').push(imageData);
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
 
-    // Display the updated images
-    displayImages();
-  }
+    // Get a reference to Firebase Storage
+    const storage = firebase.storage();
 
-  // Function to delete an image
-  function deleteImage(imageId) {
-    // Remove image data from Firebase Realtime Database
-    database.ref('images/' + imageId).remove();
+    // Get a reference to Firebase Realtime Database
+    const database = firebase.database();
 
-    // Display the updated images
-    displayImages();
-  }
+    // Function to display uploaded images in the gallery
+    function displayImages() {
+        var imageGallery = document.getElementById('image-gallery');
+        imageGallery.innerHTML = '';
 
-  // Function to like an image
-  function likeImage(imageId) {
-    // Increment likes count in Firebase Realtime Database
-    database.ref('images/' + imageId + '/likes').transaction(function(likes) {
-      return (likes || 0) + 1;
+        // Fetch image data from Firebase Realtime Database or Firestore
+        database.ref('images').once('value', function(snapshot) {
+            snapshot.forEach(function(childSnapshot) {
+                var imageData = childSnapshot.val();
+
+                var imageContainer = document.createElement('div');
+                imageContainer.className = 'image-container';
+
+                var createdBy = document.createElement('span');
+                createdBy.textContent = 'Uploaded by: ' + imageData.name;
+                imageContainer.appendChild(createdBy);
+
+                var img = document.createElement('img');
+                img.src = imageData.imageUrl;
+                img.style.maxWidth = '100%';
+                imageContainer.appendChild(img);
+
+                var deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+                deleteButton.addEventListener('click', function() {
+                    deleteImage(childSnapshot.key);
+                });
+                imageContainer.appendChild(deleteButton);
+
+                var likeButton = document.createElement('button');
+                likeButton.textContent = 'Like';
+                likeButton.addEventListener('click', function() {
+                    likeImage(childSnapshot.key);
+                });
+                imageContainer.appendChild(likeButton);
+
+                var likesCount = document.createElement('span');
+                likesCount.textContent = 'Likes: ' + imageData.likes;
+                imageContainer.appendChild(likesCount);
+
+                imageGallery.appendChild(imageContainer);
+            });
+        });
+    }
+
+    // Function to handle taking a photo using the camera
+    document.getElementById('take-photo-button').addEventListener('click', function() {
+        var constraints = { video: true };
+
+        navigator.mediaDevices.getUserMedia(constraints)
+            .then(function(stream) {
+                var video = document.createElement('video');
+                video.srcObject = stream;
+                video.play();
+
+                var canvas = document.createElement('canvas');
+                var context = canvas.getContext('2d');
+
+                video.addEventListener('canplay', function() {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                    // Convert canvas image to Blob
+                    canvas.toBlob(function(blob) {
+                        // Upload image to Firebase Storage
+                        var uploadTask = storage.ref().child('images/' + Date.now() + '.png').put(blob);
+
+                        uploadTask.on('state_changed',
+                            null,
+                            function(error) {
+                                console.error('Error uploading image:', error);
+                            },
+                            function() {
+                                // Get download URL and save image data to Firebase Realtime Database
+                                uploadTask.snapshot.ref.getDownloadURL().then(function(downloadURL) {
+                                    saveImageToDatabase(downloadURL);
+                                });
+                            }
+                        );
+                    }, 'image/png');
+                });
+            })
+            .catch(function(err) {
+                console.error('Error accessing camera: ', err);
+            });
     });
 
-    // Display the updated images
-    displayImages();
-  }
+    // Function to save image data to Firebase Realtime Database
+    function saveImageToDatabase(imageUrl) {
+        const nameInput = document.getElementById('nameInput').value;
 
-  // Display initial images
-  displayImages();
+        if (!nameInput) {
+            alert('Please enter your name.');
+            return;
+        }
+
+        // Create object representing the uploaded image
+        var imageData = {
+            name: nameInput,
+            imageUrl: imageUrl,
+            likes: 0 // Initial likes count
+        };
+
+        // Save image data to Firebase Realtime Database
+        database.ref('images').push(imageData);
+
+        // Display the updated images
+        displayImages();
+    }
+
+    // Function to delete an image
+    function deleteImage(imageId) {
+        // Remove image data from Firebase Realtime Database
+        database.ref('images/' + imageId).remove();
+
+        // Display the updated images
+        displayImages();
+    }
+
+    // Function to like an image
+    function likeImage(imageId) {
+        // Increment likes count in Firebase Realtime Database
+        database.ref('images/' + imageId + '/likes').transaction(function(likes) {
+            return (likes || 0) + 1;
+        });
+
+        // Display the updated images
+        displayImages();
+    }
+
+    // Display initial images
+    displayImages();
 </script>
 </body>
 </html>
