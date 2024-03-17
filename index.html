@@ -19,18 +19,17 @@
       </div>
 <div class="container">
   <form id="image-upload-form">
-    <input type="file" id="imageInput" accept="image/*" onchange="previewImage(event)" style="margin: 8px;">
     <input type="text" id="nameInput" placeholder="Your Name" style="margin: 8px;">
     <hr style="width: 35em; margin: 0.75em;">
-    <button type="button" onclick="uploadImage()">Upload Image</button>
+    <button type="button" id="take-photo-button">Take Photo</button>
   </form>
-  <div id="imagePreview"></div>
 </div>
 <div class="backdrop">
   <div id="image-gallery" class="image-gallery"></div>
 </div>
 </center>
 <script>
+// Function to display uploaded images in the gallery
 function displayImages(images) {
     var imageGallery = document.getElementById('image-gallery');
     imageGallery.innerHTML = '';
@@ -64,33 +63,45 @@ function fetchImages() {
 // Initial display of images
 fetchImages();
 
-function previewImage(event) {
-    const imagePreview = document.getElementById('imagePreview');
-    imagePreview.innerHTML = '';
-    const file = event.target.files[0];
-    const reader = new FileReader();
+// Function to handle taking a photo using the camera
+document.getElementById('take-photo-button').addEventListener('click', function() {
+    var constraints = { video: true };
 
-    reader.onload = function() {
-        const img = document.createElement('img');
-        img.src = reader.result;
-        imagePreview.appendChild(img);
-    }
+    navigator.mediaDevices.getUserMedia(constraints)
+        .then(function(stream) {
+            var video = document.createElement('video');
+            video.srcObject = stream;
+            video.play();
 
-    reader.readAsDataURL(file);
-}
+            var canvas = document.createElement('canvas');
+            var context = canvas.getContext('2d');
 
-function uploadImage() {
+            video.addEventListener('canplay', function() {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                var imageUrl = canvas.toDataURL('image/png');
+                saveImageToServer(imageUrl);
+            });
+        })
+        .catch(function(err) {
+            console.error('Error accessing camera: ', err);
+        });
+});
+
+// Function to save image to the server
+function saveImageToServer(imageUrl) {
     const nameInput = document.getElementById('nameInput').value;
-    const imageFile = document.getElementById('imageInput').files[0];
 
-    if (!nameInput || !imageFile) {
-        alert('Please enter your name and choose an image.');
+    if (!nameInput) {
+        alert('Please enter your name.');
         return;
     }
 
     const formData = new FormData();
     formData.append('name', nameInput);
-    formData.append('image', imageFile);
+    formData.append('image', imageUrl);
 
     fetch('/upload', {
         method: 'POST',
@@ -99,9 +110,6 @@ function uploadImage() {
     .then(response => {
         if (response.ok) {
             alert('Image uploaded successfully.');
-            document.getElementById('nameInput').value = '';
-            document.getElementById('imageInput').value = '';
-            document.getElementById('imagePreview').innerHTML = '';
             fetchImages(); // Refresh images after upload
         } else {
             alert('Failed to upload image.');
