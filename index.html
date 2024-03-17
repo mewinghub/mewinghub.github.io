@@ -1,38 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mewhub.com</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mewhub.com</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<center>
+  <center>
     <div class="menu-container">
-        <ul>
-            <li><a href=""><img src="icons8-email-94.png" height="35px"></a></li>
-            <li><a href=""><img src="icons8-menu-94.png" height="35px"></a></li>
-            <li><a href=""><img src="icons8-about-94.png" height="35px"></a></li>
-            <li><a href=""><img src="icons8-camera-94.png" height="35px"></a></li>
-            <li><a href=""><img src="icons8-plus-94.png" height="35px"></a></li>
-        </ul>
+      <ul>
+        <li><a href=""><img src="icons8-menu-94.png" height="35px"></a></li>
+        <li><a href=""><img src="icons8-email-94.png" height="35px"></a></li>
+        <li><a href=""><img src="icons8-camera-94.png" height="35px"></a></li>
+        <li><a href=""><img src="icons8-male-user-94.png" height="35px"></a></li>
+        <li><a href=""><img src="icons8-plus-94.png" height="35px"></a></li>
+      </ul>
     </div>
     <div class="container">
-        <form id="image-upload-form">
-            <input type="text" id="nameInput" placeholder="Your Name" style="margin: 8px;">
-            <hr style="width: 35em; margin: 0.75em;">
-            <button type="button" id="take-photo-button">Take Photo</button>
-        </form>
+      <form id="image-upload-form">
+        <input type="text" id="nameInput" placeholder="Your Name" style="margin: 8px;">
+        <hr style="width: 35em; margin: 0.75em;">
+        <button type="button" id="take-photo-button">Take Photo</button>
+      </form>
     </div>
     <div class="backdrop">
-        <div id="image-gallery" class="image-gallery"></div>
+      <div id="image-gallery" class="image-gallery"></div>
     </div>
-</center>
-<!-- Include Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.6.4/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.4/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.4/firebase-storage.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.4/firebase-database.js"></script>
+  </center>
 <script src="script.js"></script>
 </body>
 </html>
