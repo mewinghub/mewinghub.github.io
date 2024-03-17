@@ -145,3 +145,74 @@ firebase.auth().onAuthStateChanged((user) => {
         console.log("No user is signed in.");
     }
 });
+
+// Function to save image to Firebase Storage and Firestore
+function saveImageToFirebase(imageUrl) {
+    // Get current user
+    const user = firebase.auth().currentUser;
+
+    if (!user) {
+        console.error("No user signed in.");
+        return;
+    }
+
+    const userId = user.uid;
+    const userName = user.displayName;
+
+    var storageRef = firebase.storage().ref();
+    var imageName = userName + '_' + Date.now() + '.png';
+    var imageRef = storageRef.child('images/' + imageName);
+
+    fetch(imageUrl)
+        .then(response => response.blob())
+        .then(blob => {
+            return imageRef.put(blob);
+        })
+        .then(snapshot => {
+            return snapshot.ref.getDownloadURL();
+        })
+        .then(downloadURL => {
+            // Save the download URL along with user's information to Firestore
+            return db.collection("uploadedImages").add({
+                userId: userId,
+                userName: userName,
+                imageUrl: downloadURL,
+                likes: 0 // Initial likes count
+            });
+        })
+        .then(() => {
+            console.log("Image saved to Firebase and Firestore successfully!");
+            displayImages(); // Update the UI after saving the image
+        })
+        .catch(error => {
+            console.error("Error saving image to Firebase and Firestore: ", error);
+        });
+}
+
+// Function to display images from Firestore
+function displayImages() {
+    // Display logic remains the same
+}
+
+// Update the saveImageLocally function to use saveImageToFirebase
+function saveImageLocally(imageUrl) {
+    saveImageToFirebase(imageUrl);
+}
+
+// Initialize Firebase asynchronously
+initializeFirebase().then(() => {
+    console.log("Firebase initialized successfully!");
+    // Start displaying images after Firebase initialization
+    displayImages();
+}).catch((error) => {
+    console.error("Error initializing Firebase: ", error);
+});
+
+// Check for errors in Firebase initialization
+firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+        console.log("User is signed in.");
+    } else {
+        console.log("No user is signed in.");
+    }
+});
