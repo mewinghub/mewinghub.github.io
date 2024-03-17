@@ -63,7 +63,8 @@ ul {
 li {
   display: inline-block;
   padding-top: 1.5em;
-  padding-right: 8em;
+  padding-right: 4em;
+  padding-left: 4em;
 }
 
 .image-gallery {
